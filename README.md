@@ -1,6 +1,6 @@
-# A clock
+# overclock
 
-This is an over-complicated ESP32 clock. 
+An over-complicated ESP32 clock. 
 
 <p align="left">
   <img src="doc/clock.jpg" width="400" title="A clock">
@@ -41,8 +41,6 @@ source venv/bin/activate
 . ./export.sh # may error out, keep going
 
 esptool.py version # check it's sane
-
-
 ```
 
 ## One-time: clone this repo
@@ -50,7 +48,6 @@ esptool.py version # check it's sane
 ```
 git clone https://github.com/OnlyRubyFans/overclock
 git submodule update --init --recursive
-
 ```
 
 ## One-time: burn bootloader
