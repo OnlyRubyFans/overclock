@@ -3,7 +3,7 @@
 This is an over-complicated ESP32 clock. 
 
 <p align="left">
-  <img src="clock.jpg" width="400" title="A clock">
+  <img src="doc/clock.jpg" width="400" title="A clock">
 </p>
 
 ## Hardware
