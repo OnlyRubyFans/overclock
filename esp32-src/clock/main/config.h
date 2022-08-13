@@ -23,6 +23,9 @@ typedef struct clock_config_t {
     int period_fetch_time_minutes;
     int thingspeak_period_http_push_minutes;
     int bmp_period_read_minutes;
+    int touch_enabled;
+    int touch_pin;
+    int touch_threshold_low;
 } clock_config_t ;
 
 extern clock_config_t *clock_config; // ugly

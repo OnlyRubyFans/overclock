@@ -15,6 +15,7 @@
 #include "task_watchdog.h"
 #include "task_bmp280.h"
 #include "task_thingspeak.h"
+#include "task_touch.h"
 #include "time.h"
 #include "clock.h"
 
@@ -49,6 +50,7 @@ void app_main(void){
     xTaskCreate(&watchdog_task, "watchdog_task", 5*1024, NULL, 5, NULL);
     xTaskCreate(&bmp280_task, "bmp280_task", configMINIMAL_STACK_SIZE * 8, NULL, 5, NULL);
     xTaskCreate(&thingspeak_task, "thingspeak_task", configMINIMAL_STACK_SIZE * 8, NULL, 5, NULL);
+    xTaskCreate(&touch_task, "touch_pad_read_task", 2048, NULL, 5, NULL);
 
     while (1) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);

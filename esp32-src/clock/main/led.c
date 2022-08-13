@@ -22,6 +22,9 @@
 
 static const char *TAG = "led";
 
+int display_off = 0;
+extern int touch_button;
+
 // pam typeface
 static const uint64_t font[] = {
         0x1c22222222221c,
@@ -37,6 +40,14 @@ static const uint64_t font[] = {
 };
 
 void draw_time(max7219_t *dev) {
+    bool touch_event = (touch_button == 0);
+    display_off ^= touch_event;
+    touch_button = 1;
+
+    if (!touch_event) {
+        vTaskDelay(pdMS_TO_TICKS(200));
+    }
+
     static int tm_hour = 0;
     static int tm_min = 0;
 
@@ -58,7 +69,7 @@ void draw_time(max7219_t *dev) {
 
     uint64_t framebuffer[4] = {0};
 
-    if (tm_hour == timeinfo.tm_hour && tm_min == timeinfo.tm_min) {
+    if (tm_hour == timeinfo.tm_hour && tm_min == timeinfo.tm_min && !touch_event) {
         // nothing new to draw, bail
         return;
     }
@@ -68,6 +79,12 @@ void draw_time(max7219_t *dev) {
 
     bool is_night = (tm_hour > clock_config->night_starts_hour) ||
                     (tm_hour < clock_config->night_ends_hour);
+
+    if (display_off) {
+        // skip drawing anything
+        max7219_clear(dev);
+        return;
+    }
 
     if (is_night) {
         max7219_set_brightness(dev, clock_config->led_brightness_night);
@@ -137,7 +154,7 @@ void led_task(void *pvParameter)
     max7219_set_brightness(&dev, 15);
 
     while (1) {
-        vTaskDelay(pdMS_TO_TICKS(300));
+        vTaskDelay(pdMS_TO_TICKS(10));
         draw_time(&dev);
     }
 }
