@@ -39,6 +39,141 @@ static const uint64_t font[] = {
         0x408103c22221c,
 };
 
+
+uint64_t shift_left(uint64_t x) {
+    uint64_t ret = 0;
+    ret |= (((x>> 0)&0xFF)>>1)<< 0; // XXX: use macros?
+    ret |= (((x>> 8)&0xFF)>>1)<< 8;
+    ret |= (((x>>16)&0xFF)>>1)<<16;
+    ret |= (((x>>24)&0xFF)>>1)<<24;
+    ret |= (((x>>32)&0xFF)>>1)<<32;
+    ret |= (((x>>40)&0xFF)>>1)<<40;
+    ret |= (((x>>48)&0xFF)>>1)<<48;
+    ret |= (((x>>56)&0xFF)>>1)<<56;
+    return ret;
+}
+
+uint64_t shift_right(uint64_t x) {
+    uint64_t ret = 0;
+    ret |= ((((x>> 0)&0xFF)<<1)&0xFF)<< 0;
+    ret |= ((((x>> 8)&0xFF)<<1)&0xFF)<< 8;
+    ret |= ((((x>>16)&0xFF)<<1)&0xFF)<<16;
+    ret |= ((((x>>24)&0xFF)<<1)&0xFF)<<24;
+    ret |= ((((x>>32)&0xFF)<<1)&0xFF)<<32;
+    ret |= ((((x>>40)&0xFF)<<1)&0xFF)<<40;
+    ret |= ((((x>>48)&0xFF)<<1)&0xFF)<<48;
+    ret |= ((((x>>56)&0xFF)<<1)&0xFF)<<56;
+    return ret;
+}
+
+uint64_t shift_n_right(int n, uint64_t x) {
+    uint64_t ret = x;
+    for (int i=0; i<n; i++) {
+        ret = shift_right(ret);
+    }
+    return ret;
+}
+
+uint64_t shift_n_left(int n, uint64_t x) {
+    uint64_t ret = x;
+    for (int i=0; i<n; i++) {
+        ret = shift_left(ret);
+    }
+    return ret;
+}
+
+uint8_t collapse_rows(uint64_t x) {
+    uint8_t ret = 0;
+    ret |= x>> 0;
+    ret |= x>> 8;
+    ret |= x>>16;
+    ret |= x>>24;
+    ret |= x>>32;
+    ret |= x>>40;
+    ret |= x>>48;
+    ret |= x>>56;
+    return ret;
+}
+
+uint8_t get_leftmost_active_column(uint64_t x) {
+    uint8_t cr = collapse_rows(x);
+    if (cr&0x01) return 0;
+    if (cr&0x02) return 1;
+    if (cr&0x04) return 2;
+    if (cr&0x08) return 3;
+    if (cr&0x10) return 4;
+    if (cr&0x20) return 5;
+    if (cr&0x40) return 6;
+    if (cr&0x80) return 7;
+    return 0; // unreachable
+}
+
+uint8_t get_rightmost_active_column(uint64_t x) {
+    uint8_t cr = collapse_rows(x);
+    if (cr&0x80) return 7;
+    if (cr&0x40) return 6;
+    if (cr&0x20) return 5;
+    if (cr&0x10) return 4;
+    if (cr&0x08) return 3;
+    if (cr&0x04) return 2;
+    if (cr&0x02) return 1;
+    if (cr&0x01) return 0;
+    return 0; // unreachable
+}
+
+uint64_t align_right(int number_empty_cols, uint64_t digit) {
+    uint8_t c = get_rightmost_active_column(digit);
+
+    // we hardcode here number_empty_cols == 1
+
+    if (c==7) return shift_n_left(1, digit);
+    if (c==6) return digit;
+    if (c==5) return shift_n_right(1, digit);
+    if (c==4) return shift_n_right(2, digit);
+    if (c==3) return shift_n_right(3, digit);
+    // more shifts are unreasonable
+
+    return digit; // hopefully unreachable
+}
+
+uint64_t align_left(int number_empty_cols, uint64_t digit) {
+    uint8_t c = get_leftmost_active_column(digit);
+
+    // hardcoded number_empty_rows == 1
+
+    if (c==0) return shift_n_right(1, digit);
+    if (c==1) return digit;
+    if (c==2) return shift_n_left(1, digit);
+    if (c==3) return shift_n_left(2, digit);
+    if (c==4) return shift_n_left(3, digit);
+    // more shifts are unreasonable
+
+    return digit; // hopefully unreachable
+}
+
+static void draw_hhmm(max7219_t *dev, int h1, int h2, int m1, int m2) {
+    uint64_t framebuffer[4] = {0};
+
+    framebuffer[0] = align_right(1, font[h1]);
+    framebuffer[1] = align_left(1, font[h2]);
+    framebuffer[2] = align_right(1, font[m1]);
+    framebuffer[3] = align_left(1, font[m2]);
+
+
+    // draw symbol :
+    if (get_rightmost_active_column(framebuffer[1]) <= 5) {
+        framebuffer[1] |= 0x800000;
+        framebuffer[1] |= 0x8000000000;
+    }
+    
+    max7219_clear(dev);
+
+    for (int i=0; i<4; i++) {
+        uint64_t x = framebuffer[i];
+        max7219_draw_image_8x8(dev, i*8, (uint8_t *)&x);
+    }
+}
+
 void draw_time(max7219_t *dev) {
     bool touch_event = (touch_button == 0);
     display_off ^= touch_event;
@@ -67,7 +202,6 @@ void draw_time(max7219_t *dev) {
         return;
     }
 
-    uint64_t framebuffer[4] = {0};
 
     if (tm_hour == timeinfo.tm_hour && tm_min == timeinfo.tm_min && !touch_event) {
         // nothing new to draw, bail
@@ -107,19 +241,7 @@ void draw_time(max7219_t *dev) {
 
     ESP_LOGI(TAG, "drawing %d:%d", hh, mm);
 
-    framebuffer[0] = font[hh/10];
-    framebuffer[1] = font[hh%10];
-    framebuffer[2] = font[mm/10];
-    framebuffer[3] = font[mm%10];
-
-    // draw symbol :
-    framebuffer[1] |= 0x800000;
-    framebuffer[1] |= 0x8000000000;
-
-    max7219_clear(dev);
-    for (int i=0; i<4; i++) {
-        max7219_draw_image_8x8(dev, i*8, (uint8_t *)&framebuffer[i]);
-    }
+    draw_hhmm(dev, hh/10, hh%10, mm/10, mm%10);
 }
 
 void led_task(void *pvParameter)
