@@ -34,5 +34,5 @@ TEST_CASE("test fti") {
     REQUIRE(FTI_SUCCESS == fti_get_intersection(&ctx, &left, &right));
     REQUIRE(left == 2);
     REQUIRE(right == 50);
-    // don't bother free()
+    // don't bother to free()
 }
