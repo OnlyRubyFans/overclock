@@ -1,6 +1,7 @@
 #ifndef CLOCK_CLOCK_H
 #define CLOCK_CLOCK_H
 
+uint64_t clock_get_time_uint64(void);
 time_t clock_get_time(void);
 void clock_add(uint64_t midpoint);
 bool clock_is_synched(void);

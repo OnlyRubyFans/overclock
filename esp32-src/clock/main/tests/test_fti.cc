@@ -4,26 +4,26 @@
 #include "../fti.h"
 
 TEST_CASE("test insertion sort") {
-    uint32_t a[4] = {4,2,3,1};
+    fti_sample_t a[4] = {4,2,3,1};
     fti_insertion_sort(a, 4, FTI_SORT_ASC);
     REQUIRE(byte_vec_t(a, a+4) == byte_vec_t{1, 2, 3, 4});
 
-    uint32_t b[4] = {4,2,3,1};
+    fti_sample_t b[4] = {4,2,3,1};
     fti_insertion_sort(b, 4, FTI_SORT_DESC);
     REQUIRE(byte_vec_t(b, b+4) == byte_vec_t{4,3,2,1});
 
-    uint32_t c[5] = {4,2,3,5,1};
+    fti_sample_t c[5] = {4,2,3,5,1};
     fti_insertion_sort(c, 5, FTI_SORT_ASC);
     REQUIRE(byte_vec_t(c, c+5) == byte_vec_t{1, 2, 3, 4, 5});
 }
 
 TEST_CASE("test fti") {
     fti_ctx_t ctx = {
-            .samples_left = (uint32_t *)calloc(6, 4),
-            .samples_right = (uint32_t *)calloc(6, 4),
+            .samples_left = (fti_sample_t *)calloc(6, sizeof(fti_sample_t)),
+            .samples_right = (fti_sample_t *)calloc(6, sizeof(fti_sample_t)),
             .faulty = 1,
     };
-    uint64_t left, right;
+    fti_sample_t left, right;
     fti_add_sample(&ctx, 1, 10);
     fti_add_sample(&ctx, 2, 20);
     fti_add_sample(&ctx, 3, 30);

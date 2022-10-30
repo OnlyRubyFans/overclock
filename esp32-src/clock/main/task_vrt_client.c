@@ -33,18 +33,28 @@ void vrt_client_task(void *pvParameters)
     assert(vrt_bist() == VRT_SUCCESS);
     ESP_LOGI(TAG, "vrt_bist PASS");
 
+    while (!is_wifi_connected) {
+        ESP_LOGE(TAG, "not connected, waiting");
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+    }
+
     while (1) {
-        while (!is_wifi_connected) {
-            ESP_LOGE(TAG, "not connected, waiting");
-            vTaskDelay(500 / portTICK_PERIOD_MS); 
+        int err = vrt_quorum_singleserver();
+        if (err == VRT_SUCCESS) {
+            break;
         }
-
-        int err = vrt_quorum();
-        if (err != VRT_SUCCESS) {
-            ESP_LOGE(TAG, "vrt_quorum failed");
-        }
-
+        ESP_LOGE(TAG, "vrt_quorum_singleserver failed");
         vTaskDelay(clock_config->period_fetch_time_minutes * 60 * 1000 / portTICK_PERIOD_MS);
     }
+
+    while (1) {
+        int err = vrt_quorum_multipleservers();
+
+        if (err != VRT_SUCCESS) {
+            ESP_LOGE(TAG, "vrt_quorum_multipleservers failed");
+        }
+        vTaskDelay(clock_config->period_fetch_time_minutes * 60 * 1000 / portTICK_PERIOD_MS);
+    }
+
     vTaskDelete(NULL);
 }

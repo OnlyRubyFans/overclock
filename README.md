@@ -97,9 +97,9 @@ make monitor # exit with Ctrl + ]
 
 ## TODO
 
-- [ ] kerning
+- [X] kerning
 - [ ] fw update
-- [ ] time consensus based on interval intersection
+- [X] time consensus based on interval intersection
 - [ ] fall back to NTP?
 - [ ] better story for provisioning secrets
 - [ ] better story for configuration?

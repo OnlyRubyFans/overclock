@@ -29,6 +29,10 @@ static uint64_t get_local_midp(void) {
     return local_midp;
 }
 
+uint64_t clock_get_time_uint64(void) {
+    return get_local_midp() + (vrt_time_last_updated - vrt_local_last_updated)*1e6;
+}
+
 static int64_t diff(uint64_t a, uint64_t b) {
     return (a>b) ? (a-b) : -(b-a);
 }
