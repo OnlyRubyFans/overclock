@@ -1,0 +1,11 @@
+name: unit tests
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: run unit tests
+        run: |
+          ci/unit_test.sh
