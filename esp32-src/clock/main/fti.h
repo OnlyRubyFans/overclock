@@ -10,9 +10,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+typedef uint64_t fti_sample_t;
+
 typedef struct fti_ctx_t {
-    uint32_t *samples_left;
-    uint32_t *samples_right;
+    fti_sample_t *samples_left;
+    fti_sample_t *samples_right;
     uint32_t size;
     uint32_t faulty;
 } fti_ctx_t;
@@ -32,10 +34,10 @@ typedef enum {
 extern "C" {
 #endif
 
-fti_ret_t fti_add_sample(fti_ctx_t *ctx, uint64_t left, uint64_t right);
-fti_ret_t fti_get_intersection(fti_ctx_t *ctx, uint64_t *out_left, uint64_t *out_right);
+fti_ret_t fti_add_sample(fti_ctx_t *ctx, fti_sample_t left, fti_sample_t right);
+fti_ret_t fti_get_intersection(fti_ctx_t *ctx, fti_sample_t *out_left, fti_sample_t *out_right);
 
-void fti_insertion_sort(uint32_t *a, const size_t n, fti_sortdir_t sd);
+void fti_insertion_sort(fti_sample_t *a, const size_t n, fti_sortdir_t sd);
 
 #ifdef __cplusplus
 }
