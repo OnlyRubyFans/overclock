@@ -34,5 +34,29 @@ TEST_CASE("test fti") {
     REQUIRE(FTI_SUCCESS == fti_get_intersection(&ctx, &left, &right));
     REQUIRE(left == 2);
     REQUIRE(right == 50);
-    // don't bother to free()
+
+    free(ctx.samples_right);
+    free(ctx.samples_left);
+}
+
+TEST_CASE("test fti unsorted") {
+    fti_ctx_t ctx = {
+            .samples_left = (fti_sample_t *)calloc(6, sizeof(fti_sample_t)),
+            .samples_right = (fti_sample_t *)calloc(6, sizeof(fti_sample_t)),
+            .faulty = 1,
+    };
+    fti_sample_t left, right;
+    fti_add_sample(&ctx, 6, 60);
+    fti_add_sample(&ctx, 5, 50);
+    fti_add_sample(&ctx, 4, 40);
+    fti_add_sample(&ctx, 1, 10);
+    fti_add_sample(&ctx, 2, 20);
+    fti_add_sample(&ctx, 3, 30);
+
+    REQUIRE(FTI_SUCCESS == fti_get_intersection(&ctx, &left, &right));
+    REQUIRE(left == 2);
+    REQUIRE(right == 50);
+
+    free(ctx.samples_right);
+    free(ctx.samples_left);
 }

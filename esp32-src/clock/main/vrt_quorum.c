@@ -307,7 +307,7 @@ vrt_ret_t vrt_quorum_multipleservers(void) {
         goto exit;
     }
 
-    if (ctx.size < 3) {
+    if (ctx.size < 2) {
         ESP_LOGE(TAG, "vrt_quorum_multipleservers: quorum %d is too small, not adjusting...", ctx.size);
         goto exit;
     }
