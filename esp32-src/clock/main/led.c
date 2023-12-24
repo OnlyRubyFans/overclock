@@ -151,7 +151,7 @@ uint64_t align_left(int number_empty_cols, uint64_t digit) {
     return digit; // hopefully unreachable
 }
 
-static void draw_hhmm(max7219_t *dev, int h1, int h2, int m1, int m2) {
+static void draw_hhmm(max7219_t *dev, int h1, int h2, int m1, int m2, int should_clear, int secs) {
     uint64_t framebuffer[4] = {0};
 
     framebuffer[0] = align_right(1, font[h1]);
@@ -165,9 +165,49 @@ static void draw_hhmm(max7219_t *dev, int h1, int h2, int m1, int m2) {
         framebuffer[1] |= 0x800000;
         framebuffer[1] |= 0x8000000000;
     }
-    
-    max7219_clear(dev);
 
+
+
+    /* progress bar */
+#if 0
+    int number_lights = (secs+2) / 2;
+
+    uint64_t nl1 = (number_lights > 7) ? 7 : number_lights;
+    uint64_t nl2 = (number_lights < 7) ? 0 : ((number_lights>(7+8)) ? 8 : number_lights-7);
+    uint64_t nl3 = (number_lights < 7+8) ? 0 : ((number_lights>(7+8+8)) ? 8 : number_lights-(7+8));
+    uint64_t nl4 = (number_lights < (7+8+8)) ? 0 : number_lights-(7+8+8);
+
+
+    uint64_t mask1 =  (((1ULL<<(nl1))-1)<<1)<<(56);
+    uint64_t mask2 = ((1ULL<<(nl2))-1)<<(56);
+    uint64_t mask3 = ((1ULL<<(nl3))-1)<<(56);
+    uint64_t mask4 =  (((1ULL<<(nl4))-1))<<(56);
+#endif
+
+
+    /* moving dot */
+
+    int number_lights = (secs)/2;
+    int64_t nl1 = (number_lights > 7) ? -1 : number_lights;
+    int64_t nl2 = (number_lights < 7) ? -1 : ((number_lights>(7+8)) ? -1 : number_lights-7);
+    int64_t nl3 = (number_lights < 7+8) ? -1 : ((number_lights>(7+8+8)) ? -1 : number_lights-(7+8));
+    int64_t nl4 = (number_lights < (7+8+8)) ? -1 : number_lights-(7+8+8);
+
+    uint64_t mask1 =  nl1==-1 ? 0 : (((1ULL<<(nl1)))<<1)<<(56);
+    uint64_t mask2 =  nl2==-1 ? 0 : ((1ULL<<(nl2)))<<(56);
+    uint64_t mask3 =  nl3==-1 ? 0 : ((1ULL<<(nl3)))<<(56);
+    uint64_t mask4 =  nl4==-1 ? 0 : (((1ULL<<(nl4))))<<(56);
+
+    framebuffer[0] |= mask1;
+    framebuffer[1] |= mask2;
+    framebuffer[2] |= mask3;
+    framebuffer[3] |= mask4;
+
+    //printf("sec: %d ligh %d - %lld %lld %lld %lld sum %lld masks: %016llx %016llx %016llx %016llx\n", secs, number_lights, nl1, nl2, nl3, nl4, nl1+nl2+nl3+nl4, mask1, mask2, mask3, mask4);
+
+    if (should_clear) {
+        max7219_clear(dev);
+    }
     for (int i=0; i<4; i++) {
         uint64_t x = framebuffer[i];
         max7219_draw_image_8x8(dev, i*8, (uint8_t *)&x);
@@ -183,8 +223,9 @@ void draw_time(max7219_t *dev) {
         vTaskDelay(pdMS_TO_TICKS(200));
     }
 
-    static int tm_hour = 0;
-    static int tm_min = 0;
+    static int tm_hour = -1;
+    static int tm_min = -1;
+    static int tm_sec = -1;
 
     time_t now;
     struct tm timeinfo;
@@ -203,13 +244,14 @@ void draw_time(max7219_t *dev) {
     }
 
 
-    if (tm_hour == timeinfo.tm_hour && tm_min == timeinfo.tm_min && !touch_event) {
+    if (tm_hour == timeinfo.tm_hour && tm_min == timeinfo.tm_min && tm_sec == timeinfo.tm_sec  && !touch_event) {
         // nothing new to draw, bail
         return;
     }
 
     tm_hour = timeinfo.tm_hour;
     tm_min = timeinfo.tm_min;
+    tm_sec = timeinfo.tm_sec;
 
     bool is_night = (tm_hour > clock_config->night_starts_hour) ||
                     (tm_hour < clock_config->night_ends_hour);
@@ -239,9 +281,10 @@ void draw_time(max7219_t *dev) {
         hh = (hh == 0) ? 12 : hh; // map midnight to 12
     }
 
-    ESP_LOGI(TAG, "drawing %d:%d", hh, mm);
+    //ESP_LOGI(TAG, "drawing %d:%d", hh, mm);
 
-    draw_hhmm(dev, hh/10, hh%10, mm/10, mm%10);
+    int should_clear = tm_min != timeinfo.tm_min;
+    draw_hhmm(dev, hh/10, hh%10, mm/10, mm%10, should_clear, timeinfo.tm_sec);
 }
 
 void led_task(void *pvParameter)

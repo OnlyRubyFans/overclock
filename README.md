@@ -28,17 +28,15 @@ Parts:
 
 ## One-time: install toolchain
 
-Follow https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/index.html#step-2-get-esp-idf
+Follow https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html
 
 ```
 mkdir -p ~/esp
 cd ~/esp
-git clone -b v4.4.1 --recursive https://github.com/espressif/esp-idf.git
+git clone -b v4.4.6 --recursive https://github.com/espressif/esp-idf.git
 cd esp-idf
-virtualenv venv --system-site-packages
-source venv/bin/activate
 ./install.sh  # will install stuff to ~/.espressif
-. ./export.sh # may error out, keep going
+. ./export.sh
 
 esptool.py version # check it's sane
 ```
